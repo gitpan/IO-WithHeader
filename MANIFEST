@@ -1,0 +1,24 @@
+Changes
+lib/IO/WithHeader.pm
+lib/IO/WithHeader/RFC822.pm
+lib/IO/WithHeader/YAML.pm
+Makefile.PL
+MANIFEST			This list of files
+MANIFEST.SKIP
+META.yml
+README
+t/00basics.t
+t/01new-path.t
+t/02read.t
+t/03readupdate.t
+t/04append.t
+t/05globread.t
+t/06globwrite.t
+t/sandbox/RFC822/append
+t/sandbox/RFC822/new-path
+t/sandbox/RFC822/read
+t/sandbox/RFC822/readupdate
+t/sandbox/YAML/append
+t/sandbox/YAML/new-path
+t/sandbox/YAML/read
+t/sandbox/YAML/readupdate

@@ -1,0 +1,11 @@
+\bCVS\b
+\.DS_Store$
+^pm_to_blib$
+^blib
+^blibdirs$
+(^|/)\.cvsignore$
+\.bak$
+\.old$
+^Makefile$
+^\.podge
+^IO-WithHeader-

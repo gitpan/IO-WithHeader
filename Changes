@@ -1,0 +1,33 @@
+---
+
+# This file is in YAML format; see <URL:http://www.yaml.org/>
+# for more information.
+
+- date:    2004-12-07
+  version: 0.04
+  note:    First public release
+  changes:
+    - reworked POD
+    - worked around warning-emitting bug in Text::Header
+    - improved handling of arguments to new()
+    - improved clean-up in close()
+    - die when internal open() calls fail
+    - added IO::WithHeader::RFC822 testing to all test files
+    - cleaned up internals and turned warnings back on
+    - fixed manifest (was omitting t/sandbox and including dist[dir])
+    - began implementing auto_save
+    - removed tests for value of $!
+
+- date: 2004-11-22
+  note: The date is approximate
+  changes:
+    - rewrote YAML implementation as a separate module
+    - wrote RFC 822 headers implementation
+    - added lots of tests
+
+- date: 2004-11-14
+  changes:
+    - rechristened IO::WithHeader (was IO::YAMLMeta)
+    - removed YAML-specific code
+    - changed 'meta' to 'header'
+

@@ -1,0 +1,15 @@
+IO::WithHeader
+--------------
+
+This Perl module provides the basic functionality for working with files that
+contain a header followed by arbitrary content.  It comes with modules to handle
+headers in YAML and RFC 822 format.
+
+To install, do the usual:
+
+    perl Makefile.PL
+    make
+    make test
+    [sudo] make install
+
+For more information, see the module documentation.

@@ -34,7 +34,9 @@ foreach my $subclass (@subclasses) {
     is( $!, '', 'open $!' );
     
     is_deeply( $io->header, $header, "$package header" );
-    is_deeply( $io->body,   $body,   "$package body" );
+    
+    my $newbody = $io->body;
+    is_deeply( $newbody,    $body,   "$package body"   );
     
     $io->autoflush(1);
     

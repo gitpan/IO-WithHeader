@@ -36,7 +36,9 @@ foreach my $subclass (@subclasses) {
     $io->header(undef);
     
     ok( $io->open($path),  "$package reopen read-only" );
-    is( $io->body, $body,  "$package body" );
+    
+    my $newbody = $io->body;
+    is( $newbody, $body,   "$package body" );
     
     ok( $io->close,        "$package close"      );
     

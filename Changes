@@ -3,6 +3,12 @@
 # This file is in YAML format; see <URL:http://www.yaml.org/>
 # for more information.
 
+- date:    2005-10-03
+  version: 0.05
+  changes:
+    - body method now returns a list of lines in list context
+    - tweaked some tests
+
 - date:    2004-12-07
   version: 0.04
   note:    First public release

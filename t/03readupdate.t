@@ -25,7 +25,7 @@ foreach my $subclass (@subclasses) {
         'author' => 'nobody',
         'date' => 'never',
     };
-    my $body = "empty\n";
+    my $body = "one\ntwo\nthree\n";
     
     # --- Start with a clean copy
     copy("t/sandbox/$subclass/read", $path);
@@ -56,8 +56,8 @@ foreach my $subclass (@subclasses) {
     is( $io->tell,         $file_size - $io->header_length, "$package tell at end"   );
     ok( $io->eof,                                           "$package eof"           );
     
-    ok( $io->print("test\n"), "$package print" );
-    is( -s $path, $file_size + length("test\n"), "$package new file size" );
+    ok( $io->print("four\n"), "$package print" );
+    is( -s $path, $file_size + length("four\n"), "$package new file size" );
     
     # --- Move the cursor back to the beginning of the body
     $io->seek(0, SEEK_SET);
@@ -65,7 +65,7 @@ foreach my $subclass (@subclasses) {
     is( $io->handle->tell, $io->header_length, "$package cursor pos"        );
     is( $io->tell,         0,                  "$package tell"              );
     
-    ok( $io->print("test\n"), "$package print" );
+    ok( $io->print("four\n"), "$package print" );
     
     my $pos = $io->tell;
     is( $!, '', "$package tell again" );
@@ -73,9 +73,9 @@ foreach my $subclass (@subclasses) {
     $io->truncate($pos);
     is( $!, '', "$package truncate" );
     
-    is( -s $path, $file_size-1,  "$package file size"       );
+    is( -s $path, $io->header_length + length("four\n"),  "$package file size"       );
     
-    is( $io->body, "test\n",     "$package read body"        );
+    is( $io->body, "four\n",     "$package read body"        );
     
     ok( $io->close,              "$package close"            );
     

@@ -7,7 +7,7 @@ use Symbol;
 
 use vars qw($VERSION $AUTOLOAD);
 
-$VERSION = '0.04';
+$VERSION = '0.05';
 
 sub new {
     my ($cls, @args) = @_;
@@ -86,8 +86,11 @@ sub body {
         $self->seek($saved_pos, SEEK_SET) || die "Can't restore cursor: $err";
         die "Can't read body: $err"
             if $err;
-        return *$self->{'body'};
     }
+#    return *$self->{'body'};
+   return wantarray
+       ? split(qr{(?<=$/)}, *$self->{'body'})
+       : *$self->{'body'};
 }
 
 sub open {
@@ -344,7 +347,19 @@ sub normalize_path_and_mode {
     return ($path, $mode);
 }
 
-sub is_dirty { scalar @_ > 1 ? *{$_[0]}->{'is_dirty'} = $_[1] : *{$_[0]}->{'is_dirty'} }
+sub is_dirty {
+    my $self = shift;
+    return *$self->{'is_dirty'} unless scalar @_;
+    my $dirty = shift;
+    return *$self->{'is_dirty'} = 0 unless $dirty;
+    if ($self->auto_save) {
+        $self->save;
+        return 0;
+    } else {
+        return *$self->{'is_dirty'} = 1;
+    }
+}
+
 sub auto_close { scalar @_ > 1 ? *{$_[0]}->{'auto_close'} = $_[1] : *{$_[0]}->{'auto_close'} }
 
 sub handle      { scalar @_ > 1 ? *{$_[0]}->{'handle'}      = $_[1] : *{$_[0]}->{'handle'}      }
@@ -613,6 +628,37 @@ L<IO::WithHeader::RFC822|IO::WithHeader::RFC822>.
 
 =head1 METHODS
 
+The following methods provide access to the body of the file; see L<perlfunc>
+and L<IO::Handle|IO::Handle> for complete descriptions:
+
+=over 4
+
+=item B<eof>
+
+=item B<fileno>
+
+=item B<format_write>([I<format_name>])
+
+=item B<getc>
+
+=item B<read>(I<buf>, I<len>, [I<offset>])
+
+=item B<print>(I<args>)
+
+=item B<printf>(I<fmt>, [I<args>])
+
+=item B<stat>
+
+=item B<sysread>(I<buf>, I<len>, [I<offset>])
+
+=item B<syswrite>(I<buf>, [I<len>, [I<offset>]])
+
+=item B<truncate>(I<len>)
+
+=back
+
+The remaining methods are as follows:
+
 =over 4
 
 =item B<new>
@@ -625,9 +671,9 @@ L<IO::WithHeader::RFC822|IO::WithHeader::RFC822>.
     $io = $subclass->new;
     
     # Concise forms
-    $io = $subclass->new("$file");     # Default is read-only
-    $io = $subclass->new("<$file");    # Read-only made explicit
-    $io = $subclass->new(">$file");    # Read-write (empty header & body)
+    $io = $subclass->new("$file");  # Default is read-only
+    $io = $subclass->new("<$file"); # Read-only made explicit
+    $io = $subclass->new(">$file"); # Read-write (empty header & body)
     $io = $subclass->new($file, 'mode' => '<');  # Or '>', '+<', 'r', etc.
     $io = $subclass->new(\*STDIN);
     $io = $subclass->new(\*STDOUT, 'mode' => '>');
@@ -635,14 +681,14 @@ L<IO::WithHeader::RFC822|IO::WithHeader::RFC822>.
     
     # Full form (all arguments optional)
     $io = $subclass->new(
-        'path'   => $file,        # File will be opened or created
+        'path'   => $file,       # File will be opened or created
            - or -
-        'handle' => $fh,          # File handle (already open)
-        'mode'   => '+>',         # Default is '<'
-        'header' => \%hash,       # Default is {}
-        'body'   => $scalar,      # Content to write to the new file
+        'handle' => $fh,         # File handle (already open)
+        'mode'   => '+>',        # Default is '<'
+        'header' => \%hash,      # Default is {}
+        'body'   => $scalar,     # Content to write to the new file
            - or -
-        'body'   => $filehandle,  # Copy from a file handle to the new file
+        'body'   => $filehandle, # Copy from a file handle to the new file
     );
     
     # Specify header and/or body
@@ -708,7 +754,8 @@ B<NOTE:> Numeric modes and PerlIO layers are not yet implemented.
 
 =item B<auto_save>
 
-If set to a true value, automatically save changes when closing the file.
+If set to a true value, automatically save changes to the file's header (i.e.,
+changes made by calling C<< $io->header(\%myheader) >>).
 
 =back
 
@@ -728,7 +775,7 @@ File path.
 =item B<HASH>
 
 The header (to be written to the file).  Don't use this unless you're opening
-the file for read (or append) access.
+the file for write (or append) access.
 
 =back
 
@@ -739,8 +786,8 @@ the file for read (or append) access.
     $io->open($file, $mode) or die $!;
 
 Open a file with the specified name and mode.  You must use this method
-if the instance was created without a C<path> element (and one has not
-been assigned using the C<path()> method).
+if the instance was created without a C<path> or C<handle> element (and one has
+not been assigned using the C<path()> or C<handle()> methods).
 
 Upon failure, sets C<$!> to a meaningful message and returns a false
 value.
@@ -754,7 +801,9 @@ without having to close it first.
 
     $io->close or die $!;
 
-Close the filehandle.
+Close the filehandle.  Any changes made to the file's header (i.e., by calling
+C<< $io->head(\%myheader) >> will be saved if (and only if) I<auto_save> has
+been turned on.
 
 =item B<header>
 
@@ -764,7 +813,7 @@ Close the filehandle.
     $foo = $io->header('foo');
     $io->header('foo' => $foo);
 
-Get or set the header, or a single element in the header.  If setting all or
+Get or set the header, or a single element in the header.  XXX If setting all or
 part of the header, you must call B<save()> for the change to be written to the
 file (or file handle).
 
@@ -783,7 +832,7 @@ The header's value must be a hash or a hash-based object:
 
 Read or write the entire file body.
 
-If called in list context, the lines of the file are returned as a list; this
+XXX If called in list context, the lines of the file are returned as a list; this
 means that these are equivalent:
 
     @lines = <$io>;
@@ -794,31 +843,95 @@ means that these are equivalent:
     print $io @one_or_more_scalar_values;
     $io->print(@one_or_more_scalar_values);
 
+Print to the body of the file or filehandle.
+
 =item B<getline>
 
     $line = $io->getline;
 
+Read a single line from the body.
+
 =item B<getlines>
+
+Read all lines of the body.
 
 =item B<seek>
 
     use Fcntl qw(SEEK_SET SEEK_CUR SEEK_END);  # Handy constants
     $io->seek($whence, $pos);
+
+Move the filehandle's cursor to a position within the body.
     
 =item B<tell>
 
-=item B<seek>
+    $pos = $io->tell;
 
-=item B<truncate>
+Get the position of the cursor within the body of the file or filehandle.
 
-=item B<seek>
-
-=item B<seek>
+=item B<binmode>
 
 =item B<seek>
+
+=item B<save>
+
+Save changes made to the file's header.
+
+=item B<handle>
+
+Get or set the underlying filehandle. It's not a good idea to set this value!
 
 =back
 
+
+=begin private
+
+=head1 PRIVATE METHODS
+
+The following methods are private to this module:
+
+=over 4
+
+=item B<BINMODE>
+=item B<CLOSE>
+=item B<EOF>
+=item B<FILENO>
+=item B<GETC>
+=item B<PRINT>
+=item B<PRINTF>
+=item B<READ>
+=item B<READLINE>
+=item B<SEEK>
+=item B<TELL>
+=item B<TIEHANDLE>
+=item B<WRITE>
+=item B<as_hash>
+=item B<auto_close>
+=item B<dump>
+=item B<fh_close>
+=item B<fh_eof>
+=item B<fh_print>
+=item B<fh_seek>
+=item B<fh_tell>
+=item B<fh_truncate>
+=item B<getprop>
+=item B<header_length>
+=item B<init>
+=item B<is_dirty>
+=item B<load>
+=item B<normalize_path_and_mode>
+=item B<read_body>
+=item B<read_header>
+=item B<reader>
+=item B<setheader>
+=item B<setprop>
+=item B<tie>
+=item B<write_body>
+=item B<write_header>
+=item B<writer>
+
+=back
+
+=end private
 
 =head1 SUBCLASSING
 

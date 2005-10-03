@@ -28,7 +28,7 @@ foreach my $subclass (@subclasses) {
     isa_ok( $io, $package,       "$package instance"       );
     ok(     $io->open("<$path"), "$package open read-only" );
     
-    my @should_be = ( "empty\n" );
+    my @should_be = ( "one\n", "two\n", "three\n" );
     
     my @lines = <$io>;
     

@@ -8,7 +8,7 @@ use File::Slurp;
 
 my @subclasses = qw(YAML RFC822);
 
-plan 'tests' => 7 * scalar(@subclasses);
+plan 'tests' => 8 * scalar(@subclasses);
 
 foreach my $subclass (@subclasses) {
     
@@ -24,13 +24,22 @@ foreach my $subclass (@subclasses) {
         'author' => 'nobody',
         'date' => 'never',
     };
-    my $body = "empty\n";
+    my $body = "one\ntwo\nthree\n";
+    my @body = ("one\n", "two\n", "three\n");
     
     ok(        $io = $package->new,  "$package instantiate"    );
     isa_ok(    $io, $package,        "$package the instance"   );
     ok(        $io->open("<$path"),  "$package open read-only" );
     is_deeply( $io->header, $header, "$package header"         );
-    is(        $io->body,   $body,   "$package body"           );
+    
+    # Read body in scalar context
+    my $bodyread = $io->body;
+    is(        $bodyread,   $body,   "$package body as scalar" );
+    
+    # read body in list context
+    my @bodyread = $io->body;
+    is_deeply(\@bodyread, \@body,    "$package body as list"   );
+    
     ok(        $io->close,           "$package close"          );
     
 }

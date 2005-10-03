@@ -34,7 +34,9 @@ foreach my $subclass (@subclasses) {
     ok( $io->close,        "$subclass close"      );
     
     ok( $io->open($path),  "$subclass reopen read-only" );
-    is( $io->body, $body,  "$subclass body"             );
+    
+    my $newbody = $io->body;
+    is( $newbody, $body,   "$subclass body"             );
     
     ok( $io->close,        "$subclass close"            );
 
